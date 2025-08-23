@@ -20,12 +20,8 @@ const Formulario: React.FC = () => {
         </p>
       </div>
 
-      <form
-        action="https://formsubmit.co/sergiflorensadj@gmail.com"
-        method="POST"
-        onSubmit={onSubmit}
-        className="space-y-6"
-      >
+      <form name="inscripcion-torneo" method="POST" data-netlify="true" netlify-honeypot="bot-field" onSubmit={onSubmit} className="space-y-6">
+
         {/* Anti-spam */}
         <input type="hidden" name="_honey" />
         <input type="hidden" name="_captcha" value="false" />
