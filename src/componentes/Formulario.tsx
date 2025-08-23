@@ -5,7 +5,7 @@ const Formulario: React.FC = () => {
 
   const onSubmit = () => {
     setEnviando(true);
-    // Deja que el navegador envíe el formulario a FormSubmit.co
+    // Netlify se encarga del envío
   };
 
   return (
@@ -20,16 +20,17 @@ const Formulario: React.FC = () => {
         </p>
       </div>
 
-      <form name="inscripcion-torneo" method="POST" data-netlify="true" netlify-honeypot="bot-field" onSubmit={onSubmit} className="space-y-6">
-
-        {/* Anti-spam */}
-        <input type="hidden" name="_honey" />
-        <input type="hidden" name="_captcha" value="false" />
-        <input
-          type="hidden"
-          name="_subject"
-          value="Nueva inscripción Torneo Padel"
-        />
+      <form
+        name="inscripcion-torneo"
+        method="POST"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+        onSubmit={onSubmit}
+        className="space-y-6"
+      >
+        {/* Requerido por Netlify */}
+        <input type="hidden" name="form-name" value="inscripcion-torneo" />
+        <input type="hidden" name="bot-field" />
 
         {/* Miembros */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
