@@ -1,15 +1,18 @@
-import SeccionHero from './componentes/SeccionHero.tsx';
-import FormularioInscripcion from './componentes/FormularioInscripcion.tsx';
-import SeccionSponsors from './componentes/SeccionSponsors.tsx';
+import React from 'react';
+import Hero from './componentes/Hero';
+import Formulario from './componentes/Formulario';
+import Sponsors from './componentes/Sponsors';
 
-const App: React.FC = () => (
-  <main className="min-h-screen bg-oscuro text-white">
-    <SeccionHero />
-    <section id="formulario" className="flex justify-center py-16 px-4">
-      <FormularioInscripcion />
-    </section>
-    <SeccionSponsors />
-  </main>
-);
+const App: React.FC = () => {
+  return (
+    <div className="min-h-screen flex flex-col bg-oscuro text-white">
+      <Hero />
+      <main className="flex-1 w-full max-w-3xl mx-auto p-6">
+        <Formulario />
+      </main>
+      <Sponsors />
+    </div>
+  );
+};
 
 export default App;

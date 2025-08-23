@@ -2,20 +2,17 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,ts,jsx,tsx}"
   ],
   theme: {
     extend: {
-      fontFamily: {
-        sans: ['Montserrat', 'ui-sans-serif', 'system-ui'],
-      },
       colors: {
-        oscuro: '#121212',
-        primario: '#e50914',
-        secundario: '#1e1e1e',
-        texto: '#ffffff',
-      }
+        oscuro: "#0d0d0d",
+        rojoAPE: "#e50914",
+      },
     },
   },
-  plugins: [],
-}
+  plugins: [
+    require('@tailwindcss/forms'),
+  ],
+};
