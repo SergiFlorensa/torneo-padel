@@ -1,51 +1,49 @@
 // netlify/functions/get-submissions.js
 import fetch from "node-fetch";
 
-// Si ya sabes el FORM_ID real, ponlo directo y evitas la llamada extra
 const FORM_NAME = "inscripcion-torneo";
-const token = process.env.ADMIN_TOKEN;
 
-// netlify/functions/get-submissions.js
-
+// 👇 Función principal
 export async function handler(event) {
-  const tokenRecibido = event.headers['authorization'];
-  const tokenEsperado = process.env.ADMIN_TOKEN;
-  const auth = event.headers.authorization;
-if (auth !== `Bearer ${token}`) {
-    return { statusCode: 401, body: "No autorizado" };
-  }
-  if (tokenRecibido !== tokenEsperado) {
-    return {
-      statusCode: 401,
-      body: JSON.stringify({ error: "No autorizado" })
-    };
-  }
-
+  const adminToken = process.env.VITE_ADMIN_TOKEN; // tu token privado definido en Netlify
   const siteId = process.env.NETLIFY_SITE_ID;
-  const token  = process.env.NETLIFY_TOKEN;
+  const netlifyToken = process.env.NETLIFY_TOKEN;
+
+  // ✅ Verificación de autenticación
+  const authHeader = event.headers.authorization;
+  if (!authHeader || authHeader !== `Bearer ${adminToken}`) {
+    return { statusCode: 401, body: JSON.stringify({ error: "No autorizado" }) };
+  }
 
   try {
+    // Obtener todos los formularios del sitio
     const formsRes = await fetch(
       `https://api.netlify.com/api/v1/sites/${siteId}/forms`,
-      { headers: { Authorization: `Bearer ${token}` } }
+      {
+        headers: { Authorization: `Bearer ${netlifyToken}` },
+      }
     );
 
     if (!formsRes.ok) throw new Error("No se pudo obtener la lista de formularios");
 
     const forms = await formsRes.json();
-    const form = forms.find(f => f.name === "inscripcion-torneo");
-    if (!form) throw new Error("No existe el form inscripcion-torneo");
+    const form = forms.find((f) => f.name === FORM_NAME);
 
+    if (!form) throw new Error(`No existe el formulario ${FORM_NAME}`);
+
+    // Obtener submissions del formulario
     const subsRes = await fetch(
       `https://api.netlify.com/api/v1/forms/${form.id}/submissions`,
-      { headers: { Authorization: `Bearer ${token}` } }
+      {
+        headers: { Authorization: `Bearer ${netlifyToken}` },
+      }
     );
 
     if (!subsRes.ok) throw new Error(`Error ${subsRes.status} obteniendo submissions`);
 
     const submissions = await subsRes.json();
 
-    const mapped = submissions.map(sub => ({
+    const mapped = submissions.map((sub) => ({
       fecha: sub.created_at,
       miembro1: sub.data["Miembro 1"] || "—",
       miembro2: sub.data["Miembro 2"] || "—",
