@@ -6,25 +6,37 @@ const FORM_NAME = "inscripcion-torneo";
 
 // netlify/functions/get-submissions.js
 
-export async function handler() {
-  const token = process.env.NETLIFY_TOKEN;
+export async function handler(event) {
+  const tokenRecibido = event.headers['authorization'];
+  const tokenEsperado = process.env.ADMIN_TOKEN;
+
+  if (tokenRecibido !== tokenEsperado) {
+    return {
+      statusCode: 401,
+      body: JSON.stringify({ error: "No autorizado" })
+    };
+  }
+
   const siteId = process.env.NETLIFY_SITE_ID;
+  const token  = process.env.NETLIFY_TOKEN;
 
   try {
     const formsRes = await fetch(
       `https://api.netlify.com/api/v1/sites/${siteId}/forms`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
+
     if (!formsRes.ok) throw new Error("No se pudo obtener la lista de formularios");
 
     const forms = await formsRes.json();
     const form = forms.find(f => f.name === "inscripcion-torneo");
-    if (!form) throw new Error(`No existe el form inscripcion-torneo`);
+    if (!form) throw new Error("No existe el form inscripcion-torneo");
 
     const subsRes = await fetch(
       `https://api.netlify.com/api/v1/forms/${form.id}/submissions`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
+
     if (!subsRes.ok) throw new Error(`Error ${subsRes.status} obteniendo submissions`);
 
     const submissions = await subsRes.json();
