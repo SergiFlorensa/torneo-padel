@@ -40,13 +40,11 @@ export default function AdminPanel() {
         if (!r.ok) throw new Error("Error al obtener datos");
         return r.json();
       })
-.then((data: Inscripcion[]) => {        const formateado = data.map((e) => ({
+      .then((data: Inscripcion[]) => {
+        // ya viene plain, solo formateamos fecha
+        const formateado = data.map((e) => ({
+          ...e,
           fecha: new Date(e.fecha).toLocaleString("es-ES"),
-          miembro1: e.miembro1,
-          miembro2: e.miembro2,
-          categoria: e.categoria,
-          disponibilidad: e.disponibilidad,
-          telefono: e.telefono,
         }));
         setDatos(formateado);
       })
@@ -55,19 +53,20 @@ export default function AdminPanel() {
 
   // 3️⃣ Función de descarga PDF usando el bundle en window.html2pdf
   const descargarPDF = () => {
-   const html2pdf = window.html2pdf;
-   if (!tablaRef.current) return;
+    const pdfFn = window.html2pdf;
+    if (!tablaRef.current || !pdfFn) return;
 
-   const opt = {
-     margin: 0.5,
-     filename: "inscripciones_torneo.pdf",
-     image: { type: "jpeg", quality: 0.98 },
-     html2canvas: { scale: 2 },
-     jsPDF: { unit: "in", format: "letter", orientation: "landscape" },
-   };
+    const opt = {
+      margin: 0.5,
+      filename: "inscripciones_torneo.pdf",
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "letter", orientation: "landscape" },
+    };
 
-   html2pdf(opt).from(tablaRef.current!).save();
- };
+    // Aquí el paréntesis es clave
+    pdfFn().set(opt).from(tablaRef.current).save();
+  };
 
   // 4️⃣ Si no está autenticado, mostramos el prompt
   if (!autenticado) {
@@ -106,7 +105,10 @@ export default function AdminPanel() {
           </button>
 
           <div className="overflow-x-auto">
-            <table ref={tablaRef} className="min-w-full bg-white shadow rounded-lg">
+            <table
+              ref={tablaRef}
+              className="min-w-full bg-white shadow rounded-lg"
+            >
               <thead className="bg-gray-200 text-gray-700">
                 <tr>
                   <th className="px-4 py-2">Fecha</th>
