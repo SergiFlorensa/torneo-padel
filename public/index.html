@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ALPHAPADELEVENTS</title>
+    <meta name="description" content="Formulario de inscripción al torneo de pádel ALPHAPADELEVENTS." />
+  </head>
+  <body class="font-sans antialiased bg-red-800 text-white">
+    <!-- Formulario oculto para Netlify -->
+    <form name="inscripcion-torneo" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="miembro1" />
+      <input type="text" name="miembro2" />
+      <input type="text" name="categoria" />
+      <input type="text" name="disponibilidad" />
+      <input type="tel" name="telefono" />
+      <input type="checkbox" name="consentimiento" />
+    </form>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
