@@ -32,13 +32,15 @@ const Formulario: React.FC = () => {
       )}
 
       <form
-        name="inscripcion-torneo"
-        method="POST"
-        data-netlify="true"
-        netlify-honeypot="bot-field"
-        onSubmit={onSubmit}
-        className="space-y-6"
-      >
+  name="inscripcion-torneo"
+  method="POST"
+  data-netlify="true"
+  action="/gracias"
+  netlify-honeypot="bot-field"
+  onSubmit={onSubmit}
+  className="space-y-6"
+>
+
         {/* Requerido por Netlify */}
         <input type="hidden" name="form-name" value="inscripcion-torneo" />
         <input type="hidden" name="bot-field" />
