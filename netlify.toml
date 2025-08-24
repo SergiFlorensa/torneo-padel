@@ -1,9 +1,8 @@
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# netlify.toml
 
-[[redirects]]
-  from = "/gracias"
-  to = "/gracias.html"
-  status = 200
+[[plugins]]
+  package = "netlify-plugin-forms-submit"
+  # Opciones:
+  [plugins.inputs]
+    form = "inscripcion-torneo"        # el name de tu form
+    output = "public/submissions.json"  # donde se guardará el JSON
