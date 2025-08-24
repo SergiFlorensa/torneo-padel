@@ -3,13 +3,17 @@ import fetch from "node-fetch";
 
 // Si ya sabes el FORM_ID real, ponlo directo y evitas la llamada extra
 const FORM_NAME = "inscripcion-torneo";
+const token = process.env.ADMIN_TOKEN;
 
 // netlify/functions/get-submissions.js
 
 export async function handler(event) {
   const tokenRecibido = event.headers['authorization'];
   const tokenEsperado = process.env.ADMIN_TOKEN;
-
+  const auth = event.headers.authorization;
+if (auth !== `Bearer ${token}`) {
+    return { statusCode: 401, body: "No autorizado" };
+  }
   if (tokenRecibido !== tokenEsperado) {
     return {
       statusCode: 401,
