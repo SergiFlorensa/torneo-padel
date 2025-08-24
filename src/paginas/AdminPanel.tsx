@@ -24,18 +24,17 @@ export default function AdminPanel() {
   const [datos, setDatos] = useState<Inscripcion[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [autenticado, setAutenticado] = useState(false);
+  const [intento, setIntento] = useState(false); // Para mostrar mensaje si ha fallado
 
-  useEffect(() => {
-    const clave = import.meta.env.VITE_ADMIN_PASSWORD;
+  const handleLogin = () => {
     const entrada = prompt("Introduce la contraseña:");
-
-    if (entrada !== clave) {
-      document.body.innerHTML = "<h1 style='color:red; text-align:center;'>Acceso denegado</h1>";
-      throw new Error("Acceso bloqueado");
+    const clave = import.meta.env.VITE_ADMIN_PASSWORD;
+    if (entrada === clave) {
+      setAutenticado(true);
+    } else {
+      setIntento(true);
     }
-
-    setAutenticado(true);
-  }, []);
+  };
 
   useEffect(() => {
     if (!autenticado) return;
@@ -65,7 +64,20 @@ export default function AdminPanel() {
       .catch((e) => setError(e.message));
   }, [autenticado]);
 
-  if (!autenticado) return null;
+  if (!autenticado) {
+    return (
+      <div className="p-8 text-center text-black bg-gray-100 min-h-screen">
+        <h1 className="text-2xl font-bold mb-4">🔐 Acceso al Panel de Administración</h1>
+        <button
+          onClick={handleLogin}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Introducir contraseña
+        </button>
+        {intento && <p className="mt-4 text-red-500">❌ Contraseña incorrecta</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 bg-gray-100 min-h-screen text-black">
