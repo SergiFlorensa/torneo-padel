@@ -7,6 +7,16 @@
     <meta name="description" content="Formulario de inscripción al torneo de pádel ALPHAPADELEVENTS." />
   </head>
   <body class="font-sans antialiased bg-red-800 text-white">
+    <!-- Formulario oculto para que Netlify lo detecte -->
+    <form name="inscripcion-torneo" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="Miembro 1" />
+      <input type="text" name="Miembro 2" />
+      <input type="text" name="Categoría" />
+      <input type="text" name="Disponibilidad" />
+      <input type="tel" name="Teléfono" />
+      <input type="checkbox" name="Consentimiento" />
+    </form>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
