@@ -1,57 +1,109 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import type { FormEvent } from "react";
+
+const encode = (data: Record<string, string>) =>
+  Object.keys(data)
+    .map(
+      (key) =>
+        `${encodeURIComponent(key)}=${encodeURIComponent(data[key])}`
+    )
+    .join("&");
 
 const Formulario: React.FC = () => {
   const [enviando, setEnviando] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = () => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setEnviando(true);
-    // No evitamos el envío para permitir a Netlify procesar y redirigir a /gracias
+    setError(null);
+
+    const form = e.currentTarget;
+    const formData = Object.fromEntries(
+      Array.from(new FormData(form).entries()).map(([key, value]) => [
+        key,
+        String(value),
+      ])
+    );
+
+    try {
+      const body = encode({ "form-name": "inscripcion-torneo", ...formData });
+      const res = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+      });
+      if (res.ok) {
+        setEnviado(true);
+        form.reset();
+      } else {
+        throw new Error(`Error en el servidor (${res.status})`);
+      }
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Ha ocurrido un error al enviar. Intenta de nuevo o contacta por WhatsApp."
+      );
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (
-    <section className="bg-neutral-900 rounded-2xl shadow-xl p-6 sm:p-10 text-white max-w-xl mx-auto">
-      {/* Encabezado */}
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-extrabold text-rojoAPE uppercase tracking-wide">
-          Inscripción al Torneo
-        </h2>
-        <p className="text-sm text-gray-400 mt-1">
-          Rellena los datos de tu pareja y categoría
-        </p>
-      </div>
+    <section className="relative bg-neutral-900 rounded-2xl shadow-xl p-6 sm:p-10 text-white max-w-xl mx-auto">
+      {/* Modal de éxito */}
+      {enviado && (
+        <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4">
+          <div className="bg-neutral-800 p-6 rounded-lg text-center">
+            <h3 className="text-xl font-bold text-rojoAPE mb-2">
+              ¡Inscripción enviada!
+            </h3>
+            <p className="text-gray-300 mb-4">
+              Gracias por apuntarte al torneo de pádel. Te contactaremos pronto.
+            </p>
+            <button
+              onClick={() => setEnviado(false)}
+              className="mt-2 inline-block bg-rojoAPE px-4 py-2 rounded-lg text-white hover:opacity-90 transition"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mensaje de error */}
+      {error && (
+        <div className="mb-4 rounded-md bg-amber-600 text-black px-4 py-3 text-center font-medium shadow-md">
+          {error}
+        </div>
+      )}
 
       <form
-        name="inscripcion-torne"
+        name="inscripcion-torneo"
         method="POST"
         data-netlify="true"
         netlify-honeypot="bot-field"
-        action="/gracias"
         onSubmit={onSubmit}
         className="space-y-6"
       >
-        {/* Netlify */}
-        <input type="hidden" name="form-name" value="inscripcion-torne" />
+        <input type="hidden" name="form-name" value="inscripcion-torneo" />
         <p className="hidden" aria-hidden>
           <label>
             Si eres humano no rellenes esto: <input name="bot-field" />
           </label>
         </p>
-        <input
-          type="hidden"
-          name="_subject"
-          value="📋 Nueva inscripción - Torneo de Pádel · ALPHA (Ed.1)"
-        />
 
-        {/* Campos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <input
-            name="miembro1"
+            name="Miembro 1"
             placeholder="Miembro 1"
             required
             className="block w-full rounded-lg border border-gray-700 bg-neutral-800 px-4 py-2 text-white placeholder-gray-400 focus:border-rojoAPE focus:ring-2 focus:ring-rojoAPE outline-none transition"
           />
           <input
-            name="miembro2"
+            name="Miembro 2"
             placeholder="Miembro 2"
             required
             className="block w-full rounded-lg border border-gray-700 bg-neutral-800 px-4 py-2 text-white placeholder-gray-400 focus:border-rojoAPE focus:ring-2 focus:ring-rojoAPE outline-none transition"
@@ -63,7 +115,7 @@ const Formulario: React.FC = () => {
             Categoría
           </label>
           <select
-            name="categoria"
+            name="Categoría"
             required
             className="block w-full rounded-lg border border-gray-700 bg-neutral-800 px-4 py-2 text-white focus:border-rojoAPE focus:ring-2 focus:ring-rojoAPE"
           >
@@ -84,10 +136,10 @@ const Formulario: React.FC = () => {
             Disponibilidad horaria
           </label>
           <textarea
-            name="disponibilidad"
+            name="Disponibilidad"
             rows={3}
             required
-            placeholder="Ej.: tardes L-J (18–22h), fines de semana por la mañana…"
+            placeholder="Ej.: tardes L-J (18–22h), fines de semana…"
             className="block w-full rounded-lg border border-gray-700 bg-neutral-800 px-4 py-2 text-white placeholder-gray-400 focus:border-rojoAPE focus:ring-2 focus:ring-rojoAPE outline-none transition"
           />
         </div>
@@ -97,7 +149,7 @@ const Formulario: React.FC = () => {
             Teléfono
           </label>
           <input
-            name="telefono"
+            name="Teléfono"
             type="tel"
             required
             placeholder="+34 600 000 000"
@@ -107,7 +159,7 @@ const Formulario: React.FC = () => {
 
         <div className="flex items-start">
           <input
-            name="consentimiento"
+            name="Consentimiento"
             type="checkbox"
             required
             className="h-4 w-4 accent-rojoAPE border-gray-600 rounded focus:ring-rojoAPE"
@@ -120,7 +172,7 @@ const Formulario: React.FC = () => {
         <button
           type="submit"
           disabled={enviando}
-          className="bg-gray-500 w-full py-3 px-4 rounded-lg bg-rojoAPE text-white font-bold shadow hover:opacity-90 transition disabled:opacity-60"
+          className="w-full py-3 px-4 rounded-lg bg-rojoAPE text-white font-bold shadow hover:opacity-90 transition disabled:opacity-60"
         >
           {enviando ? "Enviando..." : "Enviar inscripción"}
         </button>
