@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import html2pdf from "html2pdf.js";
 
 // ✅ Tipo único con los datos ya formateados (incluye la fecha convertida)
 interface Inscripcion {
@@ -56,19 +55,23 @@ export default function AdminPanel() {
       .catch((e) => setError(e.message));
   }, [autenticado]);
 
-  const descargarPDF = () => {
-    if (!tablaRef.current) return;
+  // Dentro de AdminPanel.tsx, tras tus useState y useRef:
+const descargarPDF = () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const html2pdf = (window as any).html2pdf;
+  if (!tablaRef.current || !html2pdf) return;
 
-    const opt = {
-      margin: 0.5,
-      filename: "inscripciones_torneo.pdf",
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: "in", format: "letter", orientation: "landscape" },
-    };
-
-    html2pdf().set(opt).from(tablaRef.current).save();
+  const opt = {
+    margin: 0.5,
+    filename: "inscripciones_torneo.pdf",
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: "in", format: "letter", orientation: "landscape" },
   };
+
+  html2pdf().set(opt).from(tablaRef.current).save();
+};
+
 
   if (!autenticado) {
     return (
