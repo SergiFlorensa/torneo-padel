@@ -1,8 +1,8 @@
 # netlify.toml
 
-[[plugins]]
-  package = "netlify-plugin-forms-submit"
-  # Opciones:
-  [plugins.inputs]
-    form = "inscripcion-torneo"        # el name de tu form
-    output = "public/submissions.json"  # donde se guardará el JSON
+# 1 Rule SPA: todo lo que no exista como archivo estático (index.html, admin.html)
+#    debe servir index.html para que React Router maneje la ruta.
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
