@@ -28,7 +28,7 @@ export default function AdminPanel() {
 
   const handleLogin = () => {
     const entrada = prompt("Introduce la contraseña:");
-    const clave = import.meta.env.VITE_ADMIN_PASSWORD;
+    const clave = import.meta.env.VITE_ADMIN_TOKEN;
     if (entrada === clave) {
       setAutenticado(true);
     } else {
