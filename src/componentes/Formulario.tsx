@@ -2,10 +2,14 @@ import { useState } from "react";
 
 const Formulario: React.FC = () => {
   const [enviando, setEnviando] = useState(false);
+  const [enviado, setEnviado] = useState(false);
 
   const onSubmit = () => {
     setEnviando(true);
-    // Netlify se encarga del envío
+    setTimeout(() => {
+      setEnviando(false);
+      setEnviado(true);
+    }, 1000);
   };
 
   return (
@@ -20,6 +24,13 @@ const Formulario: React.FC = () => {
         </p>
       </div>
 
+      {/* Confirmación */}
+      {enviado && (
+        <div className="mb-6 rounded-md bg-green-600 text-white px-4 py-3 text-center font-semibold shadow-md transition">
+          ¡Gracias! Tu inscripción ha sido enviada correctamente. Te contactaremos por email o WhatsApp 📲
+        </div>
+      )}
+
       <form
         name="inscripcion-torneo"
         method="POST"
@@ -31,6 +42,11 @@ const Formulario: React.FC = () => {
         {/* Requerido por Netlify */}
         <input type="hidden" name="form-name" value="inscripcion-torneo" />
         <input type="hidden" name="bot-field" />
+        <input
+          type="hidden"
+          name="_subject"
+          value="📋 Nueva inscripción al torneo de pádel – Edición 1"
+        />
 
         {/* Miembros */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -117,7 +133,7 @@ const Formulario: React.FC = () => {
         <button
           type="submit"
           disabled={enviando}
-          className="w-full py-3 px-4 rounded-lg bg-rojoAPE text-white font-bold shadow hover:opacity-90 transition disabled:opacity-60 bg-gray-600"
+          className="bg-gray-500 w-full py-3 px-4 rounded-lg bg-rojoAPE text-white font-bold shadow hover:opacity-90 transition disabled:opacity-60"
         >
           {enviando ? "Enviando..." : "Enviar inscripción"}
         </button>
