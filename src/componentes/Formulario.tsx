@@ -21,7 +21,7 @@ const Formulario: React.FC = () => {
       </div>
 
       <form
-        name="Inscripcion_Torneo_ALPHA"
+        name="inscripcion-torne"
         method="POST"
         data-netlify="true"
         netlify-honeypot="bot-field"
@@ -30,7 +30,7 @@ const Formulario: React.FC = () => {
         className="space-y-6"
       >
         {/* Netlify */}
-        <input type="hidden" name="form-name" value="Inscripcion_Torneo_ALPHA" />
+        <input type="hidden" name="form-name" value="inscripcion-torne" />
         <p className="hidden" aria-hidden>
           <label>
             Si eres humano no rellenes esto: <input name="bot-field" />
