@@ -8,6 +8,9 @@
 </head>
 <body class="bg-gray-100 p-4">
   <h1 class="text-2xl font-bold mb-4">📋 Inscripciones Torneo Pádel</h1>
+  <button id="descargarPDF" class="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+  Descargar PDF
+</button>
   <div class="overflow-x-auto">
     <table id="tabla" class="min-w-full bg-white shadow rounded-lg">
       <thead class="bg-gray-200 text-gray-700">
@@ -25,37 +28,51 @@
   </div>
 
   <script>
-    fetch('/.netlify/functions/get-submissions')
-      .then(r => {
-        if (!r.ok) throw new Error('Error al obtener las inscripciones');
-        return r.json();
-      })
-      .then(data => {
-        const tbody = document.querySelector('#tabla tbody');
-        if (!data.length) {
-          tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4">Sin inscripciones</td></tr>';
-          return;
-        }
-        data.forEach(entry => {
-          const d = new Date(entry.created_at).toLocaleString();
-          const { miembro1, miembro2, categoria, disponibilidad, telefono } = entry.data;
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td class="border px-4 py-2">${d}</td>
-            <td class="border px-4 py-2">${miembro1}</td>
-            <td class="border px-4 py-2">${miembro2}</td>
-            <td class="border px-4 py-2">${categoria}</td>
-            <td class="border px-4 py-2">${disponibilidad}</td>
-            <td class="border px-4 py-2">${telefono}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      })
-      .catch(err => {
-        console.error(err);
-        const tbody = document.querySelector('#tabla tbody');
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-red-500">No se pudieron cargar los datos</td></tr>';
+  fetch('/.netlify/functions/get-submissions')
+    .then(r => {
+      if (!r.ok) throw new Error('Error al obtener las inscripciones');
+      return r.json();
+    })
+    .then(data => {
+      const tbody = document.querySelector('#tabla tbody');
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4">Sin inscripciones</td></tr>';
+        return;
+      }
+      data.forEach(entry => {
+        const fecha = new Date(entry.fecha).toLocaleString("es-ES");
+        const { miembro1, miembro2, categoria, disponibilidad, telefono } = entry;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="border px-4 py-2">${fecha}</td>
+          <td class="border px-4 py-2">${miembro1}</td>
+          <td class="border px-4 py-2">${miembro2}</td>
+          <td class="border px-4 py-2">${categoria}</td>
+          <td class="border px-4 py-2">${disponibilidad}</td>
+          <td class="border px-4 py-2">${telefono}</td>
+        `;
+        tbody.appendChild(tr);
       });
-  </script>
+    })
+    .catch(err => {
+      console.error(err);
+      const tbody = document.querySelector('#tabla tbody');
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-red-500">No se pudieron cargar los datos</td></tr>';
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+  document.getElementById('descargarPDF').addEventListener('click', () => {
+    const tabla = document.getElementById('tabla');
+    const opt = {
+      margin:       0.5,
+      filename:     'inscripciones_torneo.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
+    };
+    html2pdf().set(opt).from(tabla).save();
+  });
+</script>
 </body>
 </html>
