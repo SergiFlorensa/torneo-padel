@@ -9,11 +9,37 @@ interface Inscripcion {
   telefono: string;
 }
 
+interface Submission {
+  created_at: string;
+  data: {
+    "Miembro 1": string;
+    "Miembro 2": string;
+    "Categoría": string;
+    "Disponibilidad": string;
+    "Teléfono": string;
+  };
+}
+
 export default function AdminPanel() {
   const [datos, setDatos] = useState<Inscripcion[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [autenticado, setAutenticado] = useState(false);
 
   useEffect(() => {
+    const clave = import.meta.env.VITE_ADMIN_PASSWORD;
+    const entrada = prompt("Introduce la contraseña:");
+
+    if (entrada !== clave) {
+      document.body.innerHTML = "<h1 style='color:red; text-align:center;'>Acceso denegado</h1>";
+      throw new Error("Acceso bloqueado");
+    }
+
+    setAutenticado(true);
+  }, []);
+
+  useEffect(() => {
+    if (!autenticado) return;
+
     const token = import.meta.env.VITE_ADMIN_TOKEN;
 
     fetch("/.netlify/functions/get-submissions", {
@@ -25,9 +51,8 @@ export default function AdminPanel() {
         if (!r.ok) throw new Error("Error al obtener datos");
         return r.json();
       })
-      .then((data) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const formateado = data.map((entry: any) => ({
+      .then((data: Submission[]) => {
+        const formateado: Inscripcion[] = data.map((entry) => ({
           fecha: new Date(entry.created_at).toLocaleString("es-ES"),
           miembro1: entry.data["Miembro 1"],
           miembro2: entry.data["Miembro 2"],
@@ -38,10 +63,12 @@ export default function AdminPanel() {
         setDatos(formateado);
       })
       .catch((e) => setError(e.message));
-  }, []);
+  }, [autenticado]);
+
+  if (!autenticado) return null;
 
   return (
-    <div className="p-4 bg-gray-100 min-h-screen">
+    <div className="p-4 bg-gray-100 min-h-screen text-black">
       <h1 className="text-2xl font-bold mb-4">📋 Inscripciones Torneo Pádel</h1>
 
       {error ? (
