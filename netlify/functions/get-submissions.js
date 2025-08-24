@@ -1,10 +1,10 @@
 // netlify/functions/get-submissions.js
-import fetch from "node-fetch";
+// Node 18+ provides a global `fetch`, so no import is required
 
 // Si ya sabes el FORM_ID real, ponlo directo y evitas la llamada extra
 const FORM_NAME = "inscripcion-torneo";
 
-exports.handler = async () => {
+export async function handler() {
   const token  = process.env.NETLIFY_TOKEN;
   const siteId = process.env.NETLIFY_SITE_ID;
 
@@ -31,4 +31,4 @@ exports.handler = async () => {
   } catch (e) {
     return { statusCode: 500, body: JSON.stringify({ error: e.message }) };
   }
-};
+}
