@@ -4,46 +4,58 @@
   <meta charset="UTF-8" />
   <title>Admin Inscripciones</title>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <style>
-    body { font-family:system-ui,sans-serif; padding:1rem; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { border:1px solid #ccc; padding:0.5rem; text-align:left; }
-    th { background:#eee; }
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>📋 Inscripciones Torneo Pádel</h1>
-  <table id="tabla">
-    <thead>
-      <tr>
-        <th>Fecha</th><th>Miembro 1</th><th>Miembro 2</th>
-        <th>Categoría</th><th>Disponibilidad</th><th>Teléfono</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<body class="bg-gray-100 p-4">
+  <h1 class="text-2xl font-bold mb-4">📋 Inscripciones Torneo Pádel</h1>
+  <div class="overflow-x-auto">
+    <table id="tabla" class="min-w-full bg-white shadow rounded-lg">
+      <thead class="bg-gray-200 text-gray-700">
+        <tr>
+          <th class="px-4 py-2">Fecha</th>
+          <th class="px-4 py-2">Miembro 1</th>
+          <th class="px-4 py-2">Miembro 2</th>
+          <th class="px-4 py-2">Categoría</th>
+          <th class="px-4 py-2">Disponibilidad</th>
+          <th class="px-4 py-2">Teléfono</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
   <script>
-    fetch('/api/get-submissions')
-      .then(r => r.json())
+    fetch('/.netlify/functions/get-submissions')
+      .then(r => {
+        if (!r.ok) throw new Error('Error al obtener las inscripciones');
+        return r.json();
+      })
       .then(data => {
         const tbody = document.querySelector('#tabla tbody');
+        if (!data.length) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4">Sin inscripciones</td></tr>';
+          return;
+        }
         data.forEach(entry => {
           const d = new Date(entry.created_at).toLocaleString();
           const { miembro1, miembro2, categoria, disponibilidad, telefono } = entry.data;
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${d}</td>
-            <td>${miembro1}</td>
-            <td>${miembro2}</td>
-            <td>${categoria}</td>
-            <td>${disponibilidad}</td>
-            <td>${telefono}</td>
+            <td class="border px-4 py-2">${d}</td>
+            <td class="border px-4 py-2">${miembro1}</td>
+            <td class="border px-4 py-2">${miembro2}</td>
+            <td class="border px-4 py-2">${categoria}</td>
+            <td class="border px-4 py-2">${disponibilidad}</td>
+            <td class="border px-4 py-2">${telefono}</td>
           `;
           tbody.appendChild(tr);
         });
       })
-      .catch(console.error);
+      .catch(err => {
+        console.error(err);
+        const tbody = document.querySelector('#tabla tbody');
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-red-500">No se pudieron cargar los datos</td></tr>';
+      });
   </script>
 </body>
 </html>
