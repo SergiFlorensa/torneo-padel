@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 
-// Tipo de cada inscripción
 interface Inscripcion {
   fecha: string;
   miembro1: string;
@@ -15,9 +14,8 @@ export default function AdminPanel() {
   const [error, setError] = useState<string | null>(null);
   const [autenticado, setAutenticado] = useState(false);
   const [intentoFallido, setIntentoFallido] = useState(false);
-  const tablaRef = useRef<HTMLTableElement>(null);
+  const tablaRef = useRef<HTMLDivElement>(null);
 
-  // 1️⃣ Login con prompt
   const handleLogin = () => {
     const entrada = prompt("Introduce la contraseña:");
     const clave = import.meta.env.VITE_ADMIN_PASSWORD;
@@ -29,7 +27,6 @@ export default function AdminPanel() {
     }
   };
 
-  // 2️⃣ Carga datos tras autenticarse
   useEffect(() => {
     if (!autenticado) return;
     const token = import.meta.env.VITE_ADMIN_TOKEN;
@@ -41,7 +38,6 @@ export default function AdminPanel() {
         return r.json();
       })
       .then((data: Inscripcion[]) => {
-        // ya viene plain, solo formateamos fecha
         const formateado = data.map((e) => ({
           ...e,
           fecha: new Date(e.fecha).toLocaleString("es-ES"),
@@ -51,24 +47,21 @@ export default function AdminPanel() {
       .catch((e) => setError(e.message));
   }, [autenticado]);
 
-  // 3️⃣ Función de descarga PDF usando el bundle en window.html2pdf
   const descargarPDF = () => {
-    const pdfFn = window.html2pdf;
-    if (!tablaRef.current || !pdfFn) return;
+  if (!tablaRef.current || !window.html2pdf) return;
 
-    const opt = {
-      margin: 0.5,
-      filename: "inscripciones_torneo.pdf",
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: "in", format: "letter", orientation: "landscape" },
-    };
-
-    // Aquí el paréntesis es clave
-    pdfFn().set(opt).from(tablaRef.current).save();
+  const opt = {
+    margin: 0.5,
+    filename: "inscripciones_torneo.pdf",
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: "in", format: "letter", orientation: "landscape" },
   };
 
-  // 4️⃣ Si no está autenticado, mostramos el prompt
+  window.html2pdf().set(opt).from(tablaRef.current).save();
+};
+
+
   if (!autenticado) {
     return (
       <div className="p-8 text-center bg-gray-100 min-h-screen text-black">
@@ -88,7 +81,6 @@ export default function AdminPanel() {
     );
   }
 
-  // 5️⃣ Panel con tabla y botón PDF
   return (
     <div className="p-4 bg-gray-100 min-h-screen text-black">
       <h1 className="text-2xl font-bold mb-4">📋 Inscripciones Torneo Pádel</h1>
@@ -104,11 +96,8 @@ export default function AdminPanel() {
             Descargar PDF
           </button>
 
-          <div className="overflow-x-auto">
-            <table
-              ref={tablaRef}
-              className="min-w-full bg-white shadow rounded-lg"
-            >
+          <div ref={tablaRef} className="overflow-x-auto bg-white p-4 rounded shadow">
+            <table className="min-w-full">
               <thead className="bg-gray-200 text-gray-700">
                 <tr>
                   <th className="px-4 py-2">Fecha</th>
@@ -120,23 +109,24 @@ export default function AdminPanel() {
                 </tr>
               </thead>
               <tbody>
-                {datos.length === 0 && (
+                {datos.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="text-center p-4 text-gray-500">
                       Sin inscripciones
                     </td>
                   </tr>
+                ) : (
+                  datos.map((d, i) => (
+                    <tr key={i}>
+                      <td className="border px-4 py-2">{d.fecha}</td>
+                      <td className="border px-4 py-2">{d.miembro1}</td>
+                      <td className="border px-4 py-2">{d.miembro2}</td>
+                      <td className="border px-4 py-2">{d.categoria}</td>
+                      <td className="border px-4 py-2">{d.disponibilidad}</td>
+                      <td className="border px-4 py-2">{d.telefono}</td>
+                    </tr>
+                  ))
                 )}
-                {datos.map((d, i) => (
-                  <tr key={i}>
-                    <td className="border px-4 py-2">{d.fecha}</td>
-                    <td className="border px-4 py-2">{d.miembro1}</td>
-                    <td className="border px-4 py-2">{d.miembro2}</td>
-                    <td className="border px-4 py-2">{d.categoria}</td>
-                    <td className="border px-4 py-2">{d.disponibilidad}</td>
-                    <td className="border px-4 py-2">{d.telefono}</td>
-                  </tr>
-                ))}
               </tbody>
             </table>
           </div>
