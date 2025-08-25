@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 
 interface Inscripcion {
-  fecha: string;
+  fecha: string; // ISO o timestamp que te devuelve el backend
   miembro1: string;
   miembro2: string;
   categoria: string;
@@ -14,8 +14,9 @@ export default function AdminPanel() {
   const [error, setError] = useState<string | null>(null);
   const [autenticado, setAutenticado] = useState(false);
   const [intentoFallido, setIntentoFallido] = useState(false);
-  const tablaRef = useRef<HTMLDivElement>(null);
+  const tablaRef = useRef<HTMLTableElement | null>(null);
 
+  // Login simple por prompt (lee VITE_ADMIN_PASSWORD)
   const handleLogin = () => {
     const entrada = prompt("Introduce la contraseña:");
     const clave = import.meta.env.VITE_ADMIN_PASSWORD;
@@ -27,6 +28,7 @@ export default function AdminPanel() {
     }
   };
 
+  // Carga de datos solo si está autenticado
   useEffect(() => {
     if (!autenticado) return;
     const token = import.meta.env.VITE_ADMIN_TOKEN;
@@ -34,49 +36,65 @@ export default function AdminPanel() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => {
-        if (!r.ok) throw new Error("Error al obtener datos");
+        if (!r.ok) throw new Error(`Error al obtener datos (${r.status})`);
         return r.json();
       })
       .then((data: Inscripcion[]) => {
+        // asumimos que el backend ya devuelve { fecha, miembro1, ... }
         const formateado = data.map((e) => ({
           ...e,
           fecha: new Date(e.fecha).toLocaleString("es-ES"),
         }));
         setDatos(formateado);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(String(e?.message ?? e)));
   }, [autenticado]);
 
+  // Descargar PDF con jsPDF + autoTable (sin any)
   const descargarPDF = () => {
-  if (!tablaRef.current || !window.html2pdf) return;
+    if (!datos || datos.length === 0) {
+      alert("No hay inscripciones para exportar.");
+      return;
+    }
 
-  const opt = {
-    margin: 0.5,
-    filename: "inscripciones_torneo.pdf",
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: "in", format: "letter", orientation: "landscape" },
+    const jspdfModule = window.jspdf;
+    if (!jspdfModule || typeof jspdfModule.jsPDF !== "function") {
+      alert("jsPDF no está disponible. Comprueba public/index.html");
+      return;
+    }
+
+    const JsPDFCtor = jspdfModule.jsPDF;
+    const doc = new JsPDFCtor({ orientation: "landscape", unit: "pt", format: "a4" }) as JsPDFInstance;
+
+    // encabezado
+    doc.setFontSize(16);
+    doc.text("Inscripciones Torneo Pádel", 40, 40);
+
+    const head = [["Fecha", "Miembro 1", "Miembro 2", "Categoría", "Disponibilidad", "Teléfono"]];
+    const body = datos.map((d) => [d.fecha, d.miembro1, d.miembro2, d.categoria, d.disponibilidad, d.telefono]);
+
+    doc.autoTable({
+      head,
+      body,
+      startY: 70,
+      styles: { fontSize: 10, cellPadding: 6 },
+      headStyles: { fillColor: [230, 230, 230], textColor: 50 },
+      theme: "striped",
+      margin: { left: 20, right: 20 },
+      tableWidth: "auto",
+    });
+
+    doc.save("inscripciones_torneo.pdf");
   };
-
-  window.html2pdf().set(opt).from(tablaRef.current).save();
-};
-
 
   if (!autenticado) {
     return (
       <div className="p-8 text-center bg-gray-100 min-h-screen text-black">
-        <h1 className="text-2xl font-bold mb-4">
-          🔐 Acceso al Panel de Administración
-        </h1>
-        <button
-          onClick={handleLogin}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
+        <h1 className="text-2xl font-bold mb-4">🔐 Acceso al Panel de Administración</h1>
+        <button onClick={handleLogin} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
           Introducir contraseña
         </button>
-        {intentoFallido && (
-          <p className="mt-4 text-red-500">❌ Contraseña incorrecta</p>
-        )}
+        {intentoFallido && <p className="mt-4 text-red-500">❌ Contraseña incorrecta</p>}
       </div>
     );
   }
@@ -89,15 +107,15 @@ export default function AdminPanel() {
 
       {!error && (
         <>
-          <button
-            onClick={descargarPDF}
-            className="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Descargar PDF
-          </button>
+          <div className="flex items-center gap-2 mb-4">
+            <button onClick={descargarPDF} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+              Descargar PDF
+            </button>
+            <span className="text-sm text-gray-600">Exporta todas las inscripciones a PDF</span>
+          </div>
 
-          <div ref={tablaRef} className="overflow-x-auto bg-white p-4 rounded shadow">
-            <table className="min-w-full">
+          <div className="overflow-x-auto">
+            <table ref={tablaRef} className="min-w-full bg-white shadow rounded-lg">
               <thead className="bg-gray-200 text-gray-700">
                 <tr>
                   <th className="px-4 py-2">Fecha</th>
@@ -111,9 +129,7 @@ export default function AdminPanel() {
               <tbody>
                 {datos.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center p-4 text-gray-500">
-                      Sin inscripciones
-                    </td>
+                    <td colSpan={6} className="text-center p-4 text-gray-500">Sin inscripciones</td>
                   </tr>
                 ) : (
                   datos.map((d, i) => (
