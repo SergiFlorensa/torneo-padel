@@ -64,7 +64,21 @@
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
+  window.jsPDF = window.jspdf?.jsPDF;
+</script>
+<script>
+  const jsPDF = window.jspdf?.jsPDF;
+  if (!jsPDF || !window.jspdf.jsPDF.API.autoTable) {
+    console.error("jsPDF o autoTable no están disponibles");
+  }
+</script>
+<script>
   document.getElementById('descargarPDF').addEventListener('click', () => {
+    const jsPDF = window.jspdf?.jsPDF;
+    if (!jsPDF || !window.jspdf.jsPDF.API.autoTable) {
+      console.error("jsPDF o autoTable no están disponibles");
+      return;
+    }
     const tabla = document.getElementById('tabla');
     const opt = {
       margin:       0.5,
