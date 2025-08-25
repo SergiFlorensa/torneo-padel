@@ -16,57 +16,35 @@ export default function AdminPanel() {
   const [intentoFallido, setIntentoFallido] = useState(false);
   const tablaRef = useRef<HTMLTableElement | null>(null);
 
-  /* ----------  login sencillo ---------- */
+  // Login sencillo por prompt (usa VITE_ADMIN_PASSWORD)
   const handleLogin = () => {
     const entrada = prompt("Introduce la contraseña:");
-    if (entrada === import.meta.env.VITE_ADMIN_PASSWORD) {
-      setAutenticado(true);
-      setIntentoFallido(false);
-    } else {
-      setIntentoFallido(true);
-    }
+    const ok = entrada === import.meta.env.VITE_ADMIN_PASSWORD;
+    setAutenticado(ok);
+    setIntentoFallido(!ok);
   };
 
-  /* ----------  carga de datos ---------- */
+  // Carga de datos si autenticado
   useEffect(() => {
     if (!autenticado) return;
     fetch("/.netlify/functions/get-submissions", {
       headers: { Authorization: `Bearer ${import.meta.env.VITE_ADMIN_TOKEN}` },
     })
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+      .then((r) => (r.ok ? r.json() : Promise.reject(`Error ${r.status}`)))
       .then((data: Inscripcion[]) =>
         setDatos(
-          data.map((d) => ({
-            ...d,
-            fecha: new Date(d.fecha).toLocaleString("es-ES"),
-          })),
-        ),
+          data.map((d) => ({ ...d, fecha: new Date(d.fecha).toLocaleString("es-ES") }))
+        )
       )
       .catch((e) => setError(String(e)));
   }, [autenticado]);
 
-  /* ----------  descarga PDF con html2pdf ---------- */
-  const descargarPDF = () => {
+  // Imprimir / Guardar como PDF (usa estilos @media print del index.html)
+  const imprimirPDF = () => {
     if (!tablaRef.current) return;
-    const html2pdf = window.html2pdf;
-    if (!html2pdf) {
-      alert("html2pdf no cargó. Revisa el <script> en public/index.html");
-      return;
-    }
-
-    html2pdf()
-      .set({
-        margin: 0.5,
-        filename: "inscripciones_torneo.pdf",
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: "in", format: "letter", orientation: "landscape" },
-      })
-      .from(tablaRef.current)
-      .save();
+    window.print();
   };
 
-  /* ----------  vistas ---------- */
   if (!autenticado) {
     return (
       <div className="p-8 text-center bg-gray-100 min-h-screen text-black">
@@ -81,51 +59,48 @@ export default function AdminPanel() {
 
   return (
     <div className="p-4 bg-gray-100 min-h-screen text-black">
-      <h1 className="text-2xl font-bold mb-4">📋 Inscripciones Torneo Pádel</h1>
+      <div className="no-print flex items-center gap-2 mb-4">
+        <h1 className="text-2xl font-bold">📋 Inscripciones Torneo Pádel</h1>
+        <button onClick={imprimirPDF} className="px-4 py-2 bg-blue-600 text-white rounded">
+          Imprimir / Guardar PDF
+        </button>
+        <span className="text-sm text-gray-600">Elige “Guardar como PDF”.</span>
+      </div>
+
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      {!error && (
-        <>
-          <button onClick={descargarPDF} className="mb-4 px-4 py-2 bg-blue-600 text-white rounded">
-            Descargar PDF
-          </button>
-
-          <div className="overflow-x-auto">
-            <table ref={tablaRef} className="min-w-full bg-white shadow rounded">
-              <thead className="bg-gray-200 text-gray-700">
-                <tr>
-                  <th className="px-3 py-2">Fecha</th>
-                  <th className="px-3 py-2">Miembro 1</th>
-                  <th className="px-3 py-2">Miembro 2</th>
-                  <th className="px-3 py-2">Categoría</th>
-                  <th className="px-3 py-2">Disponibilidad</th>
-                  <th className="px-3 py-2">Teléfono</th>
+      <div className="overflow-x-auto">
+        <table ref={tablaRef} className="min-w-full bg-white shadow rounded">
+          <thead className="bg-gray-200 text-gray-700">
+            <tr>
+              <th className="px-3 py-2">Fecha</th>
+              <th className="px-3 py-2">Miembro 1</th>
+              <th className="px-3 py-2">Miembro 2</th>
+              <th className="px-3 py-2">Categoría</th>
+              <th className="px-3 py-2">Disponibilidad</th>
+              <th className="px-3 py-2">Teléfono</th>
+            </tr>
+          </thead>
+          <tbody>
+            {datos.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="p-4 text-center text-gray-500">Sin inscripciones</td>
+              </tr>
+            ) : (
+              datos.map((d, i) => (
+                <tr key={i}>
+                  <td className="border px-3 py-2">{d.fecha}</td>
+                  <td className="border px-3 py-2">{d.miembro1}</td>
+                  <td className="border px-3 py-2">{d.miembro2}</td>
+                  <td className="border px-3 py-2">{d.categoria}</td>
+                  <td className="border px-3 py-2">{d.disponibilidad}</td>
+                  <td className="border px-3 py-2">{d.telefono}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {datos.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="p-4 text-center text-gray-500">
-                      Sin inscripciones
-                    </td>
-                  </tr>
-                ) : (
-                  datos.map((d, i) => (
-                    <tr key={i}>
-                      <td className="border px-3 py-2">{d.fecha}</td>
-                      <td className="border px-3 py-2">{d.miembro1}</td>
-                      <td className="border px-3 py-2">{d.miembro2}</td>
-                      <td className="border px-3 py-2">{d.categoria}</td>
-                      <td className="border px-3 py-2">{d.disponibilidad}</td>
-                      <td className="border px-3 py-2">{d.telefono}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

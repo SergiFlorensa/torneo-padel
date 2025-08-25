@@ -5,17 +5,32 @@
   <title>Admin Inscripciones</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Único script necesario: html2pdf bundle -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- Estilos de impresión: A4 horizontal, márgenes y limpieza visual -->
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 12mm;
+    }
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      .no-print { display: none !important; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #333; }
+    }
+  </style>
 </head>
 
 <body class="bg-gray-100 p-4">
-  <h1 class="text-2xl font-bold mb-4">📋 Inscripciones Torneo Pádel</h1>
-
-  <button id="descargarPDF"
-          class="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-    Descargar PDF
-  </button>
+  <div class="no-print mb-4">
+    <h1 class="text-2xl font-bold">📋 Inscripciones Torneo Pádel</h1>
+    <div class="mt-3 flex gap-2">
+      <button id="btnImprimir" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        Imprimir / Guardar PDF
+      </button>
+      <span class="text-sm text-gray-600">Usa este botón y elige “Guardar como PDF”.</span>
+    </div>
+  </div>
 
   <div class="overflow-x-auto">
     <table id="tabla" class="min-w-full bg-white shadow rounded-lg">
@@ -34,8 +49,13 @@
   </div>
 
   <script>
-    // 1. Cargar inscripciones
-    fetch("/.netlify/functions/get-submissions")
+    // Pedimos token de acceso para la función protegida
+    const token = prompt("Introduce el token de acceso (admin):");
+
+    // Cargar inscripciones
+    fetch("/.netlify/functions/get-submissions", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
       .then((r) => {
         if (!r.ok) throw new Error("Error al obtener las inscripciones");
         return r.json();
@@ -50,24 +70,18 @@
 
         data.forEach((entry) => {
           const fecha = new Date(entry.fecha).toLocaleString("es-ES");
-          const {
-            miembro1,
-            miembro2,
-            categoria,
-            disponibilidad,
-            telefono,
-          } = entry;
+          const { miembro1, miembro2, categoria, disponibilidad, telefono } = entry;
 
           tbody.insertAdjacentHTML(
             "beforeend",
             `<tr>
-               <td class="border px-4 py-2">${fecha}</td>
-               <td class="border px-4 py-2">${miembro1}</td>
-               <td class="border px-4 py-2">${miembro2}</td>
-               <td class="border px-4 py-2">${categoria}</td>
-               <td class="border px-4 py-2">${disponibilidad}</td>
-               <td class="border px-4 py-2">${telefono}</td>
-             </tr>`
+              <td class="border px-4 py-2">${fecha}</td>
+              <td class="border px-4 py-2">${miembro1}</td>
+              <td class="border px-4 py-2">${miembro2}</td>
+              <td class="border px-4 py-2">${categoria}</td>
+              <td class="border px-4 py-2">${disponibilidad}</td>
+              <td class="border px-4 py-2">${telefono}</td>
+            </tr>`
           );
         });
       })
@@ -77,25 +91,10 @@
           '<tr><td colspan="6" class="text-center p-4 text-red-500">No se pudieron cargar los datos</td></tr>';
       });
 
-    // 2. Descargar tabla en PDF (html2pdf)
-    document
-      .getElementById("descargarPDF")
-      .addEventListener("click", () => {
-        const tabla = document.getElementById("tabla");
-        if (!window.html2pdf || !tabla) return;
-
-        window
-          .html2pdf()
-          .set({
-            margin: 0.5,
-            filename: "inscripciones_torneo.pdf",
-            image: { type: "jpeg", quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: "in", format: "letter", orientation: "landscape" },
-          })
-          .from(tabla)
-          .save();
-      });
+    // Imprimir / Guardar PDF
+    document.getElementById("btnImprimir").addEventListener("click", () => {
+      window.print();
+    });
   </script>
 </body>
 </html>

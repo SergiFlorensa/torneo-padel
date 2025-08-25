@@ -6,8 +6,20 @@
 
     <title>ALPHAPADELEVENTS</title>
     <meta name="description" content="Formulario de inscripción al torneo de pádel ALPHAPADELEVENTS." />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
+    <!-- Estilos de impresión para la SPA (afectan al /admin-panel) -->
+    <style>
+      @page {
+        size: A4 landscape;
+        margin: 12mm;
+      }
+      @media print {
+        body { background: #fff !important; color: #000 !important; }
+        .no-print { display: none !important; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; }
+      }
+    </style>
   </head>
   <body class="font-sans antialiased bg-red-800 text-white">
     <!-- Formulario oculto para Netlify -->
@@ -22,6 +34,5 @@
 
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-
   </body>
 </html>
