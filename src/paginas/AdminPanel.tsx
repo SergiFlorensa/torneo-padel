@@ -16,11 +16,10 @@ export default function AdminPanel() {
   const [intentoFallido, setIntentoFallido] = useState(false);
   const tablaRef = useRef<HTMLTableElement | null>(null);
 
-  // Login simple por prompt (lee VITE_ADMIN_PASSWORD)
+  /* ----------  login sencillo ---------- */
   const handleLogin = () => {
     const entrada = prompt("Introduce la contraseña:");
-    const clave = import.meta.env.VITE_ADMIN_PASSWORD;
-    if (entrada === clave) {
+    if (entrada === import.meta.env.VITE_ADMIN_PASSWORD) {
       setAutenticado(true);
       setIntentoFallido(false);
     } else {
@@ -28,74 +27,51 @@ export default function AdminPanel() {
     }
   };
 
-  // Carga de datos solo si está autenticado
+  /* ----------  carga de datos ---------- */
   useEffect(() => {
     if (!autenticado) return;
-    const token = import.meta.env.VITE_ADMIN_TOKEN;
     fetch("/.netlify/functions/get-submissions", {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${import.meta.env.VITE_ADMIN_TOKEN}` },
     })
-      .then((r) => {
-        if (!r.ok) throw new Error(`Error al obtener datos (${r.status})`);
-        return r.json();
-      })
-      .then((data: Inscripcion[]) => {
-        const formateado = data.map((e) => ({
-          ...e,
-          fecha: new Date(e.fecha).toLocaleString("es-ES"),
-        }));
-        setDatos(formateado);
-      })
-      .catch((e) => setError(String(e?.message ?? e)));
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+      .then((data: Inscripcion[]) =>
+        setDatos(
+          data.map((d) => ({
+            ...d,
+            fecha: new Date(d.fecha).toLocaleString("es-ES"),
+          })),
+        ),
+      )
+      .catch((e) => setError(String(e)));
   }, [autenticado]);
 
-  // Descargar PDF usando jsPDF UMD + autotable, 100% TypeScript safe
+  /* ----------  descarga PDF con html2pdf ---------- */
   const descargarPDF = () => {
-    const jsPDF = window.jspdf?.jsPDF;
-    if (!jsPDF) {
-      alert("jsPDF no está disponible. Comprueba que el script está en public/index.html");
+    if (!tablaRef.current) return;
+    const html2pdf = window.html2pdf;
+    if (!html2pdf) {
+      alert("html2pdf no cargó. Revisa el <script> en public/index.html");
       return;
     }
 
-    // Instancia de jsPDF (definido en los types que creaste)
-    const doc: JsPDFInstance = new jsPDF({
-      orientation: "landscape",
-      unit: "pt",
-      format: "a4",
-    });
-
-    doc.setFontSize(16);
-    doc.text("Inscripciones Torneo Pádel", 40, 40);
-
-    const head = [["Fecha", "Miembro 1", "Miembro 2", "Categoría", "Disponibilidad", "Teléfono"]];
-    const body = datos.map((d) => [
-      d.fecha,
-      d.miembro1,
-      d.miembro2,
-      d.categoria,
-      d.disponibilidad,
-      d.telefono,
-    ]);
-
-    doc.autoTable({
-      head,
-      body,
-      startY: 70,
-      styles: { fontSize: 10, cellPadding: 6 },
-      headStyles: { fillColor: [230, 230, 230], textColor: 50 },
-      theme: "striped",
-      margin: { left: 20, right: 20 },
-      tableWidth: "auto",
-    });
-
-    doc.save("inscripciones_torneo.pdf");
+    html2pdf()
+      .set({
+        margin: 0.5,
+        filename: "inscripciones_torneo.pdf",
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "in", format: "letter", orientation: "landscape" },
+      })
+      .from(tablaRef.current)
+      .save();
   };
 
+  /* ----------  vistas ---------- */
   if (!autenticado) {
     return (
       <div className="p-8 text-center bg-gray-100 min-h-screen text-black">
         <h1 className="text-2xl font-bold mb-4">🔐 Acceso al Panel de Administración</h1>
-        <button onClick={handleLogin} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        <button onClick={handleLogin} className="px-4 py-2 bg-blue-600 text-white rounded">
           Introducir contraseña
         </button>
         {intentoFallido && <p className="mt-4 text-red-500">❌ Contraseña incorrecta</p>}
@@ -107,40 +83,41 @@ export default function AdminPanel() {
     <div className="p-4 bg-gray-100 min-h-screen text-black">
       <h1 className="text-2xl font-bold mb-4">📋 Inscripciones Torneo Pádel</h1>
       {error && <p className="text-red-500 mb-4">{error}</p>}
+
       {!error && (
         <>
-          <div className="flex items-center gap-2 mb-4">
-            <button onClick={descargarPDF} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-              Descargar PDF
-            </button>
-            <span className="text-sm text-gray-600">Exporta todas las inscripciones a PDF</span>
-          </div>
+          <button onClick={descargarPDF} className="mb-4 px-4 py-2 bg-blue-600 text-white rounded">
+            Descargar PDF
+          </button>
+
           <div className="overflow-x-auto">
-            <table ref={tablaRef} className="min-w-full bg-white shadow rounded-lg">
+            <table ref={tablaRef} className="min-w-full bg-white shadow rounded">
               <thead className="bg-gray-200 text-gray-700">
                 <tr>
-                  <th className="px-4 py-2">Fecha</th>
-                  <th className="px-4 py-2">Miembro 1</th>
-                  <th className="px-4 py-2">Miembro 2</th>
-                  <th className="px-4 py-2">Categoría</th>
-                  <th className="px-4 py-2">Disponibilidad</th>
-                  <th className="px-4 py-2">Teléfono</th>
+                  <th className="px-3 py-2">Fecha</th>
+                  <th className="px-3 py-2">Miembro 1</th>
+                  <th className="px-3 py-2">Miembro 2</th>
+                  <th className="px-3 py-2">Categoría</th>
+                  <th className="px-3 py-2">Disponibilidad</th>
+                  <th className="px-3 py-2">Teléfono</th>
                 </tr>
               </thead>
               <tbody>
                 {datos.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center p-4 text-gray-500">Sin inscripciones</td>
+                    <td colSpan={6} className="p-4 text-center text-gray-500">
+                      Sin inscripciones
+                    </td>
                   </tr>
                 ) : (
                   datos.map((d, i) => (
                     <tr key={i}>
-                      <td className="border px-4 py-2">{d.fecha}</td>
-                      <td className="border px-4 py-2">{d.miembro1}</td>
-                      <td className="border px-4 py-2">{d.miembro2}</td>
-                      <td className="border px-4 py-2">{d.categoria}</td>
-                      <td className="border px-4 py-2">{d.disponibilidad}</td>
-                      <td className="border px-4 py-2">{d.telefono}</td>
+                      <td className="border px-3 py-2">{d.fecha}</td>
+                      <td className="border px-3 py-2">{d.miembro1}</td>
+                      <td className="border px-3 py-2">{d.miembro2}</td>
+                      <td className="border px-3 py-2">{d.categoria}</td>
+                      <td className="border px-3 py-2">{d.disponibilidad}</td>
+                      <td className="border px-3 py-2">{d.telefono}</td>
                     </tr>
                   ))
                 )}
