@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 
 interface Inscripcion {
-  fecha: string; // ISO o timestamp que te devuelve el backend
+  fecha: string;
   miembro1: string;
   miembro2: string;
   categoria: string;
@@ -40,7 +40,6 @@ export default function AdminPanel() {
         return r.json();
       })
       .then((data: Inscripcion[]) => {
-        // asumimos que el backend ya devuelve { fecha, miembro1, ... }
         const formateado = data.map((e) => ({
           ...e,
           fecha: new Date(e.fecha).toLocaleString("es-ES"),
@@ -50,28 +49,33 @@ export default function AdminPanel() {
       .catch((e) => setError(String(e?.message ?? e)));
   }, [autenticado]);
 
-  // Descargar PDF con jsPDF + autoTable (sin any)
+  // Descargar PDF usando jsPDF UMD + autotable, 100% TypeScript safe
   const descargarPDF = () => {
-    if (!datos || datos.length === 0) {
-      alert("No hay inscripciones para exportar.");
+    const jsPDF = window.jspdf?.jsPDF;
+    if (!jsPDF) {
+      alert("jsPDF no está disponible. Comprueba que el script está en public/index.html");
       return;
     }
 
-    const jspdfModule = window.jspdf;
-    if (!jspdfModule || typeof jspdfModule.jsPDF !== "function") {
-      alert("jsPDF no está disponible. Comprueba public/index.html");
-      return;
-    }
+    // Instancia de jsPDF (definido en los types que creaste)
+    const doc: JsPDFInstance = new jsPDF({
+      orientation: "landscape",
+      unit: "pt",
+      format: "a4",
+    });
 
-    const JsPDFCtor = jspdfModule.jsPDF;
-    const doc = new JsPDFCtor({ orientation: "landscape", unit: "pt", format: "a4" }) as JsPDFInstance;
-
-    // encabezado
     doc.setFontSize(16);
     doc.text("Inscripciones Torneo Pádel", 40, 40);
 
     const head = [["Fecha", "Miembro 1", "Miembro 2", "Categoría", "Disponibilidad", "Teléfono"]];
-    const body = datos.map((d) => [d.fecha, d.miembro1, d.miembro2, d.categoria, d.disponibilidad, d.telefono]);
+    const body = datos.map((d) => [
+      d.fecha,
+      d.miembro1,
+      d.miembro2,
+      d.categoria,
+      d.disponibilidad,
+      d.telefono,
+    ]);
 
     doc.autoTable({
       head,
@@ -102,9 +106,7 @@ export default function AdminPanel() {
   return (
     <div className="p-4 bg-gray-100 min-h-screen text-black">
       <h1 className="text-2xl font-bold mb-4">📋 Inscripciones Torneo Pádel</h1>
-
       {error && <p className="text-red-500 mb-4">{error}</p>}
-
       {!error && (
         <>
           <div className="flex items-center gap-2 mb-4">
@@ -113,7 +115,6 @@ export default function AdminPanel() {
             </button>
             <span className="text-sm text-gray-600">Exporta todas las inscripciones a PDF</span>
           </div>
-
           <div className="overflow-x-auto">
             <table ref={tablaRef} className="min-w-full bg-white shadow rounded-lg">
               <thead className="bg-gray-200 text-gray-700">
