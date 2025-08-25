@@ -5,13 +5,8 @@
   <title>Admin Inscripciones</title>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script>
-    // jsPDF UMD expone el constructor en window.jspdf.jsPDF
-    // alias a window.jsPDF para que los plugins lo detecten
-    window.jsPDF = window.jspdf.jsPDF;
-  </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
 </head>
 <body class="bg-gray-100 p-4">
   <div class="max-w-screen-lg mx-auto">
@@ -38,12 +33,14 @@
   <script>
     const loading = document.getElementById('loading');
     const pdfBtn = document.getElementById('pdfBtn');
+    let submissions = [];
     fetch('/.netlify/functions/get-submissions')
       .then(r => {
         if (!r.ok) throw new Error('Error al obtener las inscripciones');
         return r.json();
       })
       .then(data => {
+        submissions = data;
         loading.remove();
         const tbody = document.querySelector('#tabla tbody');
         if (!data.length) {
@@ -70,9 +67,32 @@
         }
         pdfBtn.classList.remove('hidden');
         pdfBtn.addEventListener('click', () => {
-          const doc = new jsPDF();
-          doc.autoTable({ html: '#tabla' });
-          doc.save('inscripciones.pdf');
+          const body = [
+            ['Fecha','Miembro 1','Miembro 2','Categoría','Disponibilidad','Teléfono'],
+            ...submissions.map(entry => [
+              new Date(entry.created_at).toLocaleString(),
+              entry.data['Miembro 1'],
+              entry.data['Miembro 2'],
+              entry.data['Categoría'],
+              entry.data['Disponibilidad'],
+              entry.data['Teléfono']
+            ])
+          ];
+          const docDefinition = {
+            content: [
+              { text: 'Inscripciones Torneo Pádel', style: 'header' },
+              {
+                table: {
+                  headerRows: 1,
+                  body
+                }
+              }
+            ],
+            styles: {
+              header: { fontSize: 18, bold: true, margin: [0,0,0,10] }
+            }
+          };
+          pdfMake.createPdf(docDefinition).download('inscripciones.pdf');
         });
       })
       .catch(err => {
