@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
+import autoTable from "jspdf-autotable";
 
 interface Inscripcion {
   fecha: string;
@@ -17,53 +17,44 @@ export default function AdminPanel() {
   const [autenticado, setAutenticado] = useState(false);
   const [intentoFallido, setIntentoFallido] = useState(false);
 
-  const tablaRef = useRef<HTMLTableElement | null>(null); // ✅ NECESARIO para capturar tabla
-
-  // Login sencillo por prompt (usa VITE_ADMIN_PASSWORD)
+  // Login simple por prompt (lee VITE_ADMIN_PASSWORD)
   const handleLogin = () => {
     const entrada = prompt("Introduce la contraseña:");
-    const ok = entrada === import.meta.env.VITE_ADMIN_PASSWORD;
-    setAutenticado(ok);
-    setIntentoFallido(!ok);
+    const clave = import.meta.env.VITE_ADMIN_PASSWORD;
+    if (entrada === clave) {
+      setAutenticado(true);
+      setIntentoFallido(false);
+    } else {
+      setIntentoFallido(true);
+    }
   };
 
-  // Carga de datos si autenticado
+  // Carga de datos solo si está autenticado
   useEffect(() => {
     if (!autenticado) return;
+    const token = import.meta.env.VITE_ADMIN_TOKEN;
     fetch("/.netlify/functions/get-submissions", {
-      headers: { Authorization: `Bearer ${import.meta.env.VITE_ADMIN_TOKEN}` },
+      headers: { Authorization: `Bearer ${token}` },
     })
-      .then((r) => (r.ok ? r.json() : Promise.reject(`Error ${r.status}`)))
-      .then((data: Inscripcion[]) =>
-        setDatos(
-          data.map((d) => ({
-            ...d,
-            fecha: new Date(d.fecha).toLocaleString("es-ES"),
-          }))
-        )
-      )
-      .catch((e) => setError(String(e)));
+      .then((r) => {
+        if (!r.ok) throw new Error(`Error al obtener datos (${r.status})`);
+        return r.json();
+      })
+      .then((data: Inscripcion[]) => {
+        const formateado = data.map((e) => ({
+          ...e,
+          fecha: new Date(e.fecha).toLocaleString("es-ES"),
+        }));
+        setDatos(formateado);
+      })
+      .catch((e) => setError(String(e?.message ?? e)));
   }, [autenticado]);
 
-  // 📄 Descargar PDF con jsPDF + html2canvas
-  const descargarPDF = async () => {
-    if (!tablaRef.current) return;
-
-    const tabla = tablaRef.current;
-
-    const canvas = await html2canvas(tabla, {
-      scale: 2,
-      useCORS: true,
-    });
-
-    const imgData = canvas.toDataURL("image/png");
-
-    const pdf = new jsPDF("landscape", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save("inscripciones.pdf");
+  // Descargar PDF usando jsPDF + jspdf-autotable desde NPM
+  const descargarPDF = () => {
+    const doc = new jsPDF("landscape", "mm", "a4");
+    autoTable(doc, { html: "#tabla" });
+    doc.save("inscripciones.pdf");
   };
 
   if (!autenticado) {
@@ -74,7 +65,7 @@ export default function AdminPanel() {
         </h1>
         <button
           onClick={handleLogin}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
           Introducir contraseña
         </button>
@@ -87,61 +78,60 @@ export default function AdminPanel() {
 
   return (
     <div className="p-4 bg-gray-100 min-h-screen text-black">
-      <div className="no-print flex items-center gap-2 mb-4">
-        <h1 className="text-2xl font-bold">📋 Inscripciones Torneo Pádel</h1>
-        <button
-          onClick={descargarPDF}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          Descargar PDF
-        </button>
-        <span className="text-sm text-gray-600">
-          Se descargará automáticamente.
-        </span>
-      </div>
-
+      <h1 className="text-2xl font-bold mb-4">📋 Inscripciones Torneo Pádel</h1>
       {error && <p className="text-red-500 mb-4">{error}</p>}
-
-      <div className="overflow-x-auto">
-        <table
-          ref={tablaRef}
-          className="min-w-full bg-white shadow rounded"
-        >
-          <thead className="bg-gray-200 text-gray-700">
-            <tr>
-              <th className="px-3 py-2">Fecha</th>
-              <th className="px-3 py-2">Miembro 1</th>
-              <th className="px-3 py-2">Miembro 2</th>
-              <th className="px-3 py-2">Categoría</th>
-              <th className="px-3 py-2">Disponibilidad</th>
-              <th className="px-3 py-2">Teléfono</th>
-            </tr>
-          </thead>
-          <tbody>
-            {datos.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="p-4 text-center text-gray-500"
-                >
-                  Sin inscripciones
-                </td>
-              </tr>
-            ) : (
-              datos.map((d, i) => (
-                <tr key={i}>
-                  <td className="border px-3 py-2">{d.fecha}</td>
-                  <td className="border px-3 py-2">{d.miembro1}</td>
-                  <td className="border px-3 py-2">{d.miembro2}</td>
-                  <td className="border px-3 py-2">{d.categoria}</td>
-                  <td className="border px-3 py-2">{d.disponibilidad}</td>
-                  <td className="border px-3 py-2">{d.telefono}</td>
+      {!error && (
+        <>
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              onClick={descargarPDF}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Descargar PDF
+            </button>
+            <span className="text-sm text-gray-600">
+              Exporta todas las inscripciones a PDF
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table
+              id="tabla"
+              className="min-w-full bg-white shadow rounded-lg"
+            >
+              <thead className="bg-gray-200 text-gray-700">
+                <tr>
+                  <th className="px-4 py-2">Fecha</th>
+                  <th className="px-4 py-2">Miembro 1</th>
+                  <th className="px-4 py-2">Miembro 2</th>
+                  <th className="px-4 py-2">Categoría</th>
+                  <th className="px-4 py-2">Disponibilidad</th>
+                  <th className="px-4 py-2">Teléfono</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {datos.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center p-4 text-gray-500">
+                      Sin inscripciones
+                    </td>
+                  </tr>
+                ) : (
+                  datos.map((d, i) => (
+                    <tr key={i}>
+                      <td className="border px-4 py-2">{d.fecha}</td>
+                      <td className="border px-4 py-2">{d.miembro1}</td>
+                      <td className="border px-4 py-2">{d.miembro2}</td>
+                      <td className="border px-4 py-2">{d.categoria}</td>
+                      <td className="border px-4 py-2">{d.disponibilidad}</td>
+                      <td className="border px-4 py-2">{d.telefono}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }
