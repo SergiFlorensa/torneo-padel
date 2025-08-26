@@ -1,4 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Inscripcion {
   fecha: string;
@@ -14,7 +16,6 @@ export default function AdminPanel() {
   const [error, setError] = useState<string | null>(null);
   const [autenticado, setAutenticado] = useState(false);
   const [intentoFallido, setIntentoFallido] = useState(false);
-  const tablaRef = useRef<HTMLTableElement | null>(null);
 
   // Login simple por prompt (lee VITE_ADMIN_PASSWORD)
   const handleLogin = () => {
@@ -49,46 +50,11 @@ export default function AdminPanel() {
       .catch((e) => setError(String(e?.message ?? e)));
   }, [autenticado]);
 
-  // Descargar PDF usando jsPDF UMD + autotable, 100% TypeScript safe
+  // Descargar PDF usando jsPDF + jspdf-autotable desde NPM
   const descargarPDF = () => {
-    const jsPDF = window.jspdf?.jsPDF;
-    if (!jsPDF) {
-      alert("jsPDF no está disponible. Comprueba que el script está en public/index.html");
-      return;
-    }
-
-    // Instancia de jsPDF (definido en los types que creaste)
-    const doc: JsPDFInstance = new jsPDF({
-      orientation: "landscape",
-      unit: "pt",
-      format: "a4",
-    });
-
-    doc.setFontSize(16);
-    doc.text("Inscripciones Torneo Pádel", 40, 40);
-
-    const head = [["Fecha", "Miembro 1", "Miembro 2", "Categoría", "Disponibilidad", "Teléfono"]];
-    const body = datos.map((d) => [
-      d.fecha,
-      d.miembro1,
-      d.miembro2,
-      d.categoria,
-      d.disponibilidad,
-      d.telefono,
-    ]);
-
-    doc.autoTable({
-      head,
-      body,
-      startY: 70,
-      styles: { fontSize: 10, cellPadding: 6 },
-      headStyles: { fillColor: [230, 230, 230], textColor: 50 },
-      theme: "striped",
-      margin: { left: 20, right: 20 },
-      tableWidth: "auto",
-    });
-
-    doc.save("inscripciones_torneo.pdf");
+    const doc = new jsPDF("landscape", "mm", "a4");
+    autoTable(doc, { html: "#tabla" });
+    doc.save("inscripciones.pdf");
   };
 
   if (!autenticado) {
@@ -116,7 +82,7 @@ export default function AdminPanel() {
             <span className="text-sm text-gray-600">Exporta todas las inscripciones a PDF</span>
           </div>
           <div className="overflow-x-auto">
-            <table ref={tablaRef} className="min-w-full bg-white shadow rounded-lg">
+            <table id="tabla" className="min-w-full bg-white shadow rounded-lg">
               <thead className="bg-gray-200 text-gray-700">
                 <tr>
                   <th className="px-4 py-2">Fecha</th>
