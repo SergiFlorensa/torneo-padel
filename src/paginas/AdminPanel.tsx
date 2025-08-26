@@ -94,10 +94,7 @@ export default function AdminPanel() {
             </span>
           </div>
           <div className="overflow-x-auto">
-            <table
-              id="tabla"
-              className="min-w-full bg-white shadow rounded-lg"
-            >
+            <table id="tabla" className="min-w-full bg-white shadow rounded-lg">
               <thead className="bg-gray-200 text-gray-700">
                 <tr>
                   <th className="px-4 py-2">Fecha</th>
