@@ -16,7 +16,8 @@ export default function AdminPanel() {
   const [error, setError] = useState<string | null>(null);
   const [autenticado, setAutenticado] = useState(false);
   const [intentoFallido, setIntentoFallido] = useState(false);
-  const tablaRef = useRef<HTMLTableElement | null>(null);
+
+  const tablaRef = useRef<HTMLTableElement | null>(null); // ✅ NECESARIO para capturar tabla
 
   // Login sencillo por prompt (usa VITE_ADMIN_PASSWORD)
   const handleLogin = () => {
@@ -35,7 +36,10 @@ export default function AdminPanel() {
       .then((r) => (r.ok ? r.json() : Promise.reject(`Error ${r.status}`)))
       .then((data: Inscripcion[]) =>
         setDatos(
-          data.map((d) => ({ ...d, fecha: new Date(d.fecha).toLocaleString("es-ES") }))
+          data.map((d) => ({
+            ...d,
+            fecha: new Date(d.fecha).toLocaleString("es-ES"),
+          }))
         )
       )
       .catch((e) => setError(String(e)));
@@ -47,9 +51,8 @@ export default function AdminPanel() {
 
     const tabla = tablaRef.current;
 
-    // Captura de la tabla como imagen
     const canvas = await html2canvas(tabla, {
-      scale: 2, // más resolución
+      scale: 2,
       useCORS: true,
     });
 
@@ -66,11 +69,18 @@ export default function AdminPanel() {
   if (!autenticado) {
     return (
       <div className="p-8 text-center bg-gray-100 min-h-screen text-black">
-        <h1 className="text-2xl font-bold mb-4">🔐 Acceso al Panel de Administración</h1>
-        <button onClick={handleLogin} className="px-4 py-2 bg-blue-600 text-white rounded">
+        <h1 className="text-2xl font-bold mb-4">
+          🔐 Acceso al Panel de Administración
+        </h1>
+        <button
+          onClick={handleLogin}
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
           Introducir contraseña
         </button>
-        {intentoFallido && <p className="mt-4 text-red-500">❌ Contraseña incorrecta</p>}
+        {intentoFallido && (
+          <p className="mt-4 text-red-500">❌ Contraseña incorrecta</p>
+        )}
       </div>
     );
   }
@@ -79,16 +89,24 @@ export default function AdminPanel() {
     <div className="p-4 bg-gray-100 min-h-screen text-black">
       <div className="no-print flex items-center gap-2 mb-4">
         <h1 className="text-2xl font-bold">📋 Inscripciones Torneo Pádel</h1>
-        <button onClick={descargarPDF} className="px-4 py-2 bg-blue-600 text-white rounded">
+        <button
+          onClick={descargarPDF}
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
           Descargar PDF
         </button>
-        <span className="text-sm text-gray-600">Se descargará automáticamente.</span>
+        <span className="text-sm text-gray-600">
+          Se descargará automáticamente.
+        </span>
       </div>
 
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       <div className="overflow-x-auto">
-        <table ref={tablaRef} className="min-w-full bg-white shadow rounded">
+        <table
+          ref={tablaRef}
+          className="min-w-full bg-white shadow rounded"
+        >
           <thead className="bg-gray-200 text-gray-700">
             <tr>
               <th className="px-3 py-2">Fecha</th>
@@ -102,7 +120,12 @@ export default function AdminPanel() {
           <tbody>
             {datos.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-4 text-center text-gray-500">Sin inscripciones</td>
+                <td
+                  colSpan={6}
+                  className="p-4 text-center text-gray-500"
+                >
+                  Sin inscripciones
+                </td>
               </tr>
             ) : (
               datos.map((d, i) => (
