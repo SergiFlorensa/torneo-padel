@@ -1,0 +1,43 @@
+*** Begin Patch
+*** Delete File: public/admin.html
+*** Update File: package.json
+@@ "dependencies": {
+-    "html2pdf.js": "^0.11.1",
++    "jspdf-autotable": "^3.8.0",
+@@
+*** Update File: package.json
+@@ "devDependencies": {
+-    "@types/html2pdf.js": "^0.10.0",
+*** End Patch
+*** Update File: src/paginas/AdminPanel.tsx
+@@
+-import html2canvas from "html2canvas";
++import autoTable from "jspdf-autotable";
+@@
+-  const descargarPDF = async () => {
+-    if (!tablaRef.current) return;
+-
+-    const tabla = tablaRef.current;
+-
+-    // Captura de la tabla como imagen
+-    const canvas = await html2canvas(tabla, {
+-      scale: 2, // más resolución
+-      useCORS: true,
+-    });
+-
+-    const imgData = canvas.toDataURL("image/png");
+-
+-    const pdf = new jsPDF("landscape", "mm", "a4");
+-    const pdfWidth = pdf.internal.pageSize.getWidth();
+-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+-
+-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+-    pdf.save("inscripciones.pdf");
+-  };
++  const descargarPDF = () => {
++    if (!tablaRef.current) return;
++    const doc = new jsPDF("landscape", "mm", "a4");
++    autoTable(doc, { html: tablaRef.current });
++    doc.save("inscripciones.pdf");
++  };
+*** End Patch
