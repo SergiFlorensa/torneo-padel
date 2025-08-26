@@ -3,98 +3,84 @@
 <head>
   <meta charset="UTF-8" />
   <title>Admin Inscripciones</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Estilos de impresión: A4 horizontal, márgenes y limpieza visual -->
-  <style>
-    @page {
-      size: A4 landscape;
-      margin: 12mm;
-    }
-    @media print {
-      body { background: #fff !important; color: #000 !important; }
-      .no-print { display: none !important; }
-      table { border-collapse: collapse; width: 100%; }
-      th, td { border: 1px solid #333; }
-    }
-  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    window.jsPDF = window.jspdf.jsPDF;
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
-
 <body class="bg-gray-100 p-4">
-  <div class="no-print mb-4">
-    <h1 class="text-2xl font-bold">📋 Inscripciones Torneo Pádel</h1>
-    <div class="mt-3 flex gap-2">
-      <button id="btnImprimir" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-        Imprimir / Guardar PDF
-      </button>
-      <span class="text-sm text-gray-600">Usa este botón y elige “Guardar como PDF”.</span>
+  <div class="max-w-screen-lg mx-auto">
+    <h1 class="text-2xl font-bold mb-4">📋 Inscripciones Torneo Pádel</h1>
+    <p id="loading" class="mb-4 text-gray-500">Cargando inscripciones...</p>
+    <button id="pdfBtn" class="mb-4 bg-blue-600 text-white px-4 py-2 rounded hidden">Descargar PDF</button>
+    <div class="overflow-x-auto">
+      <table id="tabla" class="min-w-full bg-white shadow rounded-lg">
+        <thead class="bg-gray-200 text-gray-700">
+          <tr>
+            <th class="px-4 py-2">Fecha</th>
+            <th class="px-4 py-2">Miembro 1</th>
+            <th class="px-4 py-2">Miembro 2</th>
+            <th class="px-4 py-2">Categoría</th>
+            <th class="px-4 py-2">Disponibilidad</th>
+            <th class="px-4 py-2">Teléfono</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
   </div>
 
-  <div class="overflow-x-auto">
-    <table id="tabla" class="min-w-full bg-white shadow rounded-lg">
-      <thead class="bg-gray-200 text-gray-700">
-        <tr>
-          <th class="px-4 py-2">Fecha</th>
-          <th class="px-4 py-2">Miembro 1</th>
-          <th class="px-4 py-2">Miembro 2</th>
-          <th class="px-4 py-2">Categoría</th>
-          <th class="px-4 py-2">Disponibilidad</th>
-          <th class="px-4 py-2">Teléfono</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
   <script>
-    // Pedimos token de acceso para la función protegida
-    const token = prompt("Introduce el token de acceso (admin):");
+    const loading = document.getElementById('loading');
+    const pdfBtn = document.getElementById('pdfBtn');
 
-    // Cargar inscripciones
-    fetch("/.netlify/functions/get-submissions", {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error("Error al obtener las inscripciones");
+    fetch('/.netlify/functions/get-submissions')
+      .then(r => {
+        if (!r.ok) throw new Error('Error al obtener las inscripciones');
         return r.json();
       })
-      .then((data) => {
-        const tbody = document.querySelector("#tabla tbody");
+      .then(data => {
+        loading.remove();
+        const tbody = document.querySelector('#tabla tbody');
         if (!data.length) {
-          tbody.innerHTML =
-            '<tr><td colspan="6" class="text-center p-4">Sin inscripciones</td></tr>';
-          return;
-        }
-
-        data.forEach((entry) => {
-          const fecha = new Date(entry.fecha).toLocaleString("es-ES");
-          const { miembro1, miembro2, categoria, disponibilidad, telefono } = entry;
-
-          tbody.insertAdjacentHTML(
-            "beforeend",
-            `<tr>
-              <td class="border px-4 py-2">${fecha}</td>
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4">Sin inscripciones</td></tr>';
+        } else {
+          data.forEach(entry => {
+            const d = new Date(entry.created_at).toLocaleString("es-ES");
+            const miembro1 = entry.data["Miembro 1"];
+            const miembro2 = entry.data["Miembro 2"];
+            const categoria = entry.data["Categoría"];
+            const disponibilidad = entry.data["Disponibilidad"];
+            const telefono = entry.data["Teléfono"];
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="border px-4 py-2">${d}</td>
               <td class="border px-4 py-2">${miembro1}</td>
               <td class="border px-4 py-2">${miembro2}</td>
               <td class="border px-4 py-2">${categoria}</td>
               <td class="border px-4 py-2">${disponibilidad}</td>
               <td class="border px-4 py-2">${telefono}</td>
-            </tr>`
-          );
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+
+        pdfBtn.classList.remove('hidden');
+        pdfBtn.addEventListener('click', () => {
+          const doc = new jsPDF('landscape');
+          doc.autoTable({ html: '#tabla', styles: { fontSize: 10 } });
+          doc.save('inscripciones_torneo.pdf');
         });
       })
-      .catch((err) => {
+      .catch(err => {
         console.error(err);
-        document.querySelector("#tabla tbody").innerHTML =
-          '<tr><td colspan="6" class="text-center p-4 text-red-500">No se pudieron cargar los datos</td></tr>';
+        loading.remove();
+        const tbody = document.querySelector('#tabla tbody');
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-red-500">Error: ${err.message}</td></tr>`;
       });
-
-    // Imprimir / Guardar PDF
-    document.getElementById("btnImprimir").addEventListener("click", () => {
-      window.print();
-    });
   </script>
 </body>
 </html>
