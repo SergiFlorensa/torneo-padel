@@ -1,4 +1,6 @@
 import { useEffect, useState, useRef } from "react";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 interface Inscripcion {
   fecha: string;
@@ -39,10 +41,26 @@ export default function AdminPanel() {
       .catch((e) => setError(String(e)));
   }, [autenticado]);
 
-  // Imprimir / Guardar como PDF (usa estilos @media print del index.html)
-  const imprimirPDF = () => {
+  // 📄 Descargar PDF con jsPDF + html2canvas
+  const descargarPDF = async () => {
     if (!tablaRef.current) return;
-    window.print();
+
+    const tabla = tablaRef.current;
+
+    // Captura de la tabla como imagen
+    const canvas = await html2canvas(tabla, {
+      scale: 2, // más resolución
+      useCORS: true,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF("landscape", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save("inscripciones.pdf");
   };
 
   if (!autenticado) {
@@ -61,10 +79,10 @@ export default function AdminPanel() {
     <div className="p-4 bg-gray-100 min-h-screen text-black">
       <div className="no-print flex items-center gap-2 mb-4">
         <h1 className="text-2xl font-bold">📋 Inscripciones Torneo Pádel</h1>
-        <button onClick={imprimirPDF} className="px-4 py-2 bg-blue-600 text-white rounded">
-          Imprimir / Guardar PDF
+        <button onClick={descargarPDF} className="px-4 py-2 bg-blue-600 text-white rounded">
+          Descargar PDF
         </button>
-        <span className="text-sm text-gray-600">Elige “Guardar como PDF”.</span>
+        <span className="text-sm text-gray-600">Se descargará automáticamente.</span>
       </div>
 
       {error && <p className="text-red-500 mb-4">{error}</p>}
