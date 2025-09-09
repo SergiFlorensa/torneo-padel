@@ -172,7 +172,7 @@ const Formulario: React.FC = () => {
         <button
           type="submit"
           disabled={enviando}
-          className="w-full py-3 px-4 rounded-lg bg-rojoAPE text-white font-bold shadow hover:opacity-90 transition disabled:opacity-60"
+          className="bg-gray-500 w-full py-3 px-4 rounded-lg bg-rojoAPE text-white font-bold shadow hover:opacity-90 transition disabled:opacity-60"
         >
           {enviando ? "Enviando..." : "Enviar inscripción"}
         </button>
