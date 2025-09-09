@@ -139,7 +139,7 @@ const Formulario: React.FC = () => {
             name="Disponibilidad"
             rows={3}
             required
-            placeholder="Ej.: tardes L-J (18–22h), fines de semana…"
+            placeholder="Ej.: Viernes: 18:00, Sabado: 10:00-14:00, Domingo: 16:00"
             className="block w-full rounded-lg border border-gray-700 bg-neutral-800 px-4 py-2 text-white placeholder-gray-400 focus:border-rojoAPE focus:ring-2 focus:ring-rojoAPE outline-none transition"
           />
         </div>
