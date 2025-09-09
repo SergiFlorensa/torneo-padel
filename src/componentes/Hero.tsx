@@ -9,7 +9,7 @@ const Hero: React.FC = () => (
         <span className="text-white">EVENTS</span>
       </h1>
       <p className="mt-3 text-lg uppercase text-gray-300 tracking-widest">
-        Edición 1 · <span className="text-rojoAPE font-bold"></span>
+        Edición 2 · <span className="text-rojoAPE font-bold"></span>
       </p>
     </div>
   </header>
